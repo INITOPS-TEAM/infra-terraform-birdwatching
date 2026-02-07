@@ -1,82 +1,95 @@
 # infra-terraform-birdwatching
 
-Terraform setup for AWS IaC.
-
-This repository initializes the AWS provider and provisions an S3 bucket as a Terraform-managed resource.
+Terraform setup for AWS IaC. This repository manages AWS resources using Terraform. It provisions an S3 bucket and stores Terraform state in S3 with native locking.
 
 ---
-
 ## Requirements
 
-- Terraform >= 1.2
+- Terraform ~> 1.14
 - AWS CLI v2
-- AWS IAM user credentials
-- AWS CLI profile configured (default: `iac`)
+- AWS CLI profile configured locally
+- AWS account with permissions to read/write the Terraform state bucket and manage S3 resources
 
 ---
-
 ## Authentication
 
-Terraform uses AWS CLI credentials via profile:
+Terraform uses AWS CLI credentials.
 
-```
-iac
-```
+---
+## Backend (S3 remote state) credentials
 
-Check available profiles:
+The S3 backend uses AWS credentials available at the time of `terraform init`.
+Before running `terraform init`, set the required AWS profile and region:
+
 ```bash
-aws configure list-profiles
+export AWS_PROFILE=iac
+export AWS_REGION=eu-central-1
+terraform init
 ```
 
 ---
-
-## Structure
+## Repository structure
 
 ```
 infra-terraform/
-├── terraform.tf
-├── provider.tf
-├── variables.tf
-├── main.tf
-├── terraform.tfvars   # local only
-├── .terraform.lock.hcl
+├── backend.tf             # S3 remote backend configuration
+├── provider.tf            # Terraform + AWS provider configuration
+├── main.tf                # Root module (calls child modules)
+├── variables.tf           # Root input variables
+├── outputs.tf             # Root outputs
+├── terraform.tfvars       # Local-only values (not committed)
+├── .terraform.lock.hcl    # Provider dependency lock file
+├── modules/
+│   └── s3/
+│       ├── bucket.tf      # S3 bucket resource
+│       ├── variables.tf   # Module input variables
+│       └── outputs.tf     # Module outputs
 └── README.md
 ```
 
 ---
-
 ## Configuration
 
-S3 bucket name is provided via `terraform.tfvars`
-(not committed to the repository):
+Environment-specific values are provided via `terraform.tfvars` (the file isn't commited to the repo).
+
+Example values:
 
 ```hcl
-bucket_name = "infra-terraform-UNIQUE-dev"
+aws_profile = "iac"
+aws_region  = "eu-central-1"
+bucket_name = "<s3_bucket_name>"
 ```
-Replace UNIQUE  with our account ID. 
 
 ---
-
 ## Usage
 
+Initialize Terraform (backend + modules):
 ```bash
+export AWS_PROFILE=iac
+export AWS_REGION=eu-central-1
 terraform init
+```
+
+Validate configuration:
+```bash
 terraform validate
+```
+
+Preview changes:
+```bash
 terraform plan
+```
+
+Apply changes:
+```bash
 terraform apply
 ```
 
 ---
+## Operational details
 
-## Notes
-
-- Terraform state is stored locally
-- No AWS credentials are stored in the repository
-- `.terraform/`, `*.tfstate`, `terraform.tfvars` are excluded from git
-
----
-
-## Next Step
-
-Deploy application runtime on AWS EC2 using Terraform.
+- Terraform state is stored in S3 remote backend
+- Native S3 state locking is enabled (no DynamoDB)
+- AWS provider version is pinned via `.terraform.lock.hcl`
+- The managed S2 bucket resource is protected with `prevent_destroy`
 
