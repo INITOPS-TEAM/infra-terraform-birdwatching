@@ -40,25 +40,54 @@ variable "app_port" {
 }
 
 variable "enable_ssh" {
-  description = "Whether to allow SSH access to instances (prefer SSM if possible)"
+  description = "Whether to allow SSH access (prefer SSM; enable SSH only as a fallback)"
   type        = bool
   default     = false
 }
 
 variable "ssh_cidr_allowlist" {
-  description = "CIDR allowlist for SSH when enable_ssh=true (never use 0.0.0.0/0)"
+  description = "CIDR allowlist for SSH when enable_ssh=true"
   type        = list(string)
   default     = []
 }
 
-variable "enable_consul_ui_public_access" {
-  description = "Whether to allow access to Consul UI/API on port 8500 from consul_ui_cidr_allowlist"
+variable "enable_consul_ui" {
+  description = "Whether to allow access to Consul UI/API (8500) from consul_ui_cidr_allowlist"
   type        = bool
   default     = false
 }
 
 variable "consul_ui_cidr_allowlist" {
-  description = "CIDR allowlist for Consul UI/API access (8500) when enable_consul_ui_public_access=true"
+  description = "CIDR allowlist for Consul UI/API access (8500) if enabled"
   type        = list(string)
   default     = []
+}
+
+variable "key_name" {
+  description = "EC2 key pair name for SSH access"
+  type        = string
+}
+
+variable "associate_public_ip" {
+  description = "Whether to associate public IPs with instances (lab default true)"
+  type        = bool
+  default     = true
+}
+
+variable "instance_type_lb" {
+  description = "EC2 instance type for the load balancer"
+  type        = string
+  default     = "t3.micro"
+}
+
+variable "instance_type_app" {
+  description = "EC2 instance type for app instances"
+  type        = string
+  default     = "t3.micro"
+}
+
+variable "instance_type_db" {
+  description = "EC2 instance type for db instance"
+  type        = string
+  default     = "t3.micro"
 }
