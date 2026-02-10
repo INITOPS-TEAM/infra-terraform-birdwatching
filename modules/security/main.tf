@@ -42,6 +42,16 @@ resource "aws_security_group" "consul" {
   }
 }
 
+resource "aws_security_group" "jenkins" {
+  name        = "${var.name}-sg-jenkins"
+  description = "Jenkins security group (UI via allowlist; deploy SSH to app)"
+  vpc_id      = var.vpc_id
+
+  tags = {
+    Name = "${var.name}-sg-jenkins"
+  }
+}
+
 ################################
 # LB ingress (public web)
 ################################
@@ -149,6 +159,19 @@ resource "aws_vpc_security_group_ingress_rule" "ssh_to_consul" {
   from_port         = 22
   to_port           = 22
   cidr_ipv4         = each.value
+}
+
+################################
+# App SSH from Jenkins (deploy)
+################################
+
+resource "aws_vpc_security_group_ingress_rule" "ssh_to_app_from_jenkins" {
+  description                  = "SSH deploy access from Jenkins"
+  security_group_id            = aws_security_group.app.id
+  ip_protocol                  = "tcp"
+  from_port                    = 22
+  to_port                      = 22
+  referenced_security_group_id = aws_security_group.jenkins.id
 }
 
 ################################
@@ -300,6 +323,32 @@ resource "aws_vpc_security_group_ingress_rule" "consul_8500_ui" {
   cidr_ipv4         = each.value
 }
 
+###############################
+# Jenkins inbound (UI + SSH)
+################################
+
+resource "aws_vpc_security_group_ingress_rule" "jenkins_8080_ui" {
+  for_each = var.enable_jenkins_ui ? toset(var.jenkins_ui_cidr_allowlist) : toset([])
+
+  description       = "Jenkins UI 8080 tcp from allowlist"
+  security_group_id = aws_security_group.jenkins.id
+  ip_protocol       = "tcp"
+  from_port         = 8080
+  to_port           = 8080
+  cidr_ipv4         = each.value
+}
+
+resource "aws_vpc_security_group_ingress_rule" "ssh_to_jenkins" {
+  for_each = var.enable_ssh ? toset(var.ssh_cidr_allowlist) : toset([])
+
+  description       = "SSH to Jenkins fallback prefer SSM"
+  security_group_id = aws_security_group.jenkins.id
+  ip_protocol       = "tcp"
+  from_port         = 22
+  to_port           = 22
+  cidr_ipv4         = each.value
+}
+
 ################################
 # General outbound
 ################################
@@ -328,6 +377,13 @@ resource "aws_vpc_security_group_egress_rule" "consul_all_out" {
 resource "aws_vpc_security_group_egress_rule" "lb_all_out" {
   description       = "LB outbound to internet for updates"
   security_group_id = aws_security_group.lb.id
+  ip_protocol       = "-1"
+  cidr_ipv4         = "0.0.0.0/0"
+}
+
+resource "aws_vpc_security_group_egress_rule" "jenkins_all_out" {
+  description       = "Jenkins outbound to internet for updates and plugins"
+  security_group_id = aws_security_group.jenkins.id
   ip_protocol       = "-1"
   cidr_ipv4         = "0.0.0.0/0"
 }

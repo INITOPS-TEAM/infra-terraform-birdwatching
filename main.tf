@@ -24,6 +24,9 @@ module "security" {
 
   enable_consul_ui         = var.enable_consul_ui
   consul_ui_cidr_allowlist = var.consul_ui_cidr_allowlist
+
+  enable_jenkins_ui         = var.enable_jenkins_ui
+  jenkins_ui_cidr_allowlist = var.jenkins_ui_cidr_allowlist
 }
 
 module "compute" {
@@ -34,11 +37,17 @@ module "compute" {
   key_name            = var.key_name
   associate_public_ip = var.associate_public_ip
 
-  instance_type_lb  = var.instance_type_lb
-  instance_type_app = var.instance_type_app
-  instance_type_db  = var.instance_type_db
+  instance_type_lb      = var.instance_type_lb
+  instance_type_app     = var.instance_type_app
+  instance_type_db      = var.instance_type_db
+  instance_type_consul  = var.instance_type_consul
+  instance_type_jenkins = var.instance_type_jenkins
 
-  sg_lb_id  = module.security.sg_lb_id
-  sg_app_id = module.security.sg_app_id
-  sg_db_id  = module.security.sg_db_id
+  sg_lb_id      = module.security.sg_lb_id
+  sg_app_id     = module.security.sg_app_id
+  sg_db_id      = module.security.sg_db_id
+  sg_consul_id  = module.security.sg_consul_id
+  sg_jenkins_id = module.security.sg_jenkins_id
+
+  s3_bucket_name = var.bucket_name
 }

@@ -37,3 +37,15 @@ variable "consul_ui_cidr_allowlist" {
   type        = list(string)
   default     = []
 }
+
+variable "enable_jenkins_ui" {
+  description = "Whether to allow access to Jenkins UI (8080) from allowlist"
+  type        = bool
+  default     = false
+}
+
+variable "jenkins_ui_cidr_allowlist" {
+  description = "CIDR allowlist for Jenkins UI access (8080) if enabled"
+  type        = list(string)
+  default     = []
+}

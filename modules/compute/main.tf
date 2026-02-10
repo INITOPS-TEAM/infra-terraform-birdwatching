@@ -46,6 +46,54 @@ resource "aws_iam_instance_profile" "ec2_ssm" {
   role = aws_iam_role.ec2_ssm.name
 }
 
+##############################
+# IAM role + instance profile for Jenkins
+###############################
+
+resource "aws_iam_role" "jenkins" {
+  name = "${var.name}-jenkins-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "jenkins_ssm_core" {
+  role       = aws_iam_role.jenkins.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_role_policy" "jenkins_s3" {
+  name = "${var.name}-jenkins-s3"
+  role = aws_iam_role.jenkins.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket"]
+        Resource = ["arn:aws:s3:::${var.s3_bucket_name}"]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
+        Resource = ["arn:aws:s3:::${var.s3_bucket_name}/*"]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_instance_profile" "jenkins" {
+  name = "${var.name}-jenkins-profile"
+  role = aws_iam_role.jenkins.name
+}
+
 ################################
 # Local placement helpers
 ################################
@@ -132,5 +180,49 @@ resource "aws_instance" "db" {
   tags = {
     Name = "${var.name}-db"
     Role = "db"
+  }
+}
+
+################################
+# Consul instance
+################################
+
+resource "aws_instance" "consul" {
+  ami           = data.aws_ami.ubuntu_2404.id
+  instance_type = var.instance_type_consul
+  key_name      = var.key_name
+
+  subnet_id                   = local.subnet_b
+  vpc_security_group_ids      = [var.sg_consul_id]
+  associate_public_ip_address = var.associate_public_ip
+
+  iam_instance_profile = aws_iam_instance_profile.ec2_ssm.name
+
+  tags = {
+    Name = "${var.name}-consul"
+    Role = "consul"
+  }
+}
+
+################################
+# Jenkins instance
+################################
+
+resource "aws_instance" "jenkins" {
+  ami           = data.aws_ami.ubuntu_2404.id
+  instance_type = var.instance_type_jenkins
+  key_name      = var.key_name
+
+  subnet_id                   = local.subnet_a
+  vpc_security_group_ids      = [var.sg_jenkins_id]
+  associate_public_ip_address = var.associate_public_ip
+
+  user_data = file("${path.module}/user_data/jenkins.sh")
+
+  iam_instance_profile = aws_iam_instance_profile.jenkins.name
+
+  tags = {
+    Name = "${var.name}-jenkins"
+    Role = "jenkins"
   }
 }

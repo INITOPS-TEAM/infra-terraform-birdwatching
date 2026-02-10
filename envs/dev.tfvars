@@ -26,3 +26,6 @@ ssh_cidr_allowlist = ["0.0.0.0/0"]
 
 enable_consul_ui         = false
 consul_ui_cidr_allowlist = []
+
+enable_jenkins_ui         = true
+jenkins_ui_cidr_allowlist = ["0.0.0.0/0"]

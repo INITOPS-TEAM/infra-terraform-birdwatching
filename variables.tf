@@ -91,3 +91,25 @@ variable "instance_type_db" {
   type        = string
   default     = "t3.micro"
 }
+
+variable "enable_jenkins_ui" {
+  description = "Whether to allow access to Jenkins UI (8080) from allowlist"
+  type        = bool
+}
+
+variable "jenkins_ui_cidr_allowlist" {
+  description = "CIDR allowlist for Jenkins UI access (8080)"
+  type        = list(string)
+}
+
+variable "instance_type_consul" {
+  description = "EC2 instance type for Consul instance"
+  type        = string
+  default     = "t3.micro"
+}
+
+variable "instance_type_jenkins" {
+  description = "EC2 instance type for Jenkins instance"
+  type        = string
+  default     = "t3.micro"
+}

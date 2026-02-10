@@ -37,3 +37,18 @@ output "sg_consul_id" {
   description = "Security group ID for the Consul server"
   value       = module.security.sg_consul_id
 }
+
+output "consul_public_ip" {
+  description = "Public ID of Consul"
+  value       = module.compute.consul_public_ip
+}
+
+output "sg_jenkins_id" {
+  description = "Security group ID for Jenkins"
+  value       = module.security.sg_jenkins_id
+}
+
+output "jenkins_public_ip" {
+  description = "Public IP of Jenkins"
+  value       = module.compute.jenkins_public_ip
+}

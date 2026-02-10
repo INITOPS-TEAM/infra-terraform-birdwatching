@@ -51,3 +51,30 @@ variable "sg_db_id" {
   description = "Security group ID for the database instance"
   type        = string
 }
+
+variable "instance_type_consul" {
+  description = "EC2 instance type for Consul VM"
+  type        = string
+  default     = "t3.micro"
+}
+
+variable "instance_type_jenkins" {
+  description = "EC2 instance type for Jenkins VM"
+  type        = string
+  default     = "t3.micro"
+}
+
+variable "sg_consul_id" {
+  description = "Security group ID for the Consul instance"
+  type        = string
+}
+
+variable "sg_jenkins_id" {
+  description = "Security group ID for the Jenkins instance"
+  type        = string
+}
+
+variable "s3_bucket_name" {
+  description = "Existing S3 bucket name for Jenkins artifacts"
+  type        = string
+}

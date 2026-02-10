@@ -17,3 +17,8 @@ output "sg_consul_id" {
   description = "Security group ID for Consul server"
   value       = aws_security_group.consul.id
 }
+
+output "sg_jenkins_id" {
+  description = "Security group ID for Jenkins instance"
+  value       = aws_security_group.jenkins.id
+}
