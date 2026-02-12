@@ -73,3 +73,13 @@ variable "s3_bucket_name" {
   description = "Existing S3 bucket name for Jenkins artifacts"
   type        = string
 }
+
+variable "env" {
+  description = "Deployment environment"
+  type        = string
+}
+
+variable "aws_region" {
+  description = "AWS region for deployment"
+  type        = string
+}

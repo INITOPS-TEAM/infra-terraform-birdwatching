@@ -18,7 +18,7 @@ data "aws_ami" "ubuntu_2404" {
 ### IAM role + instance profile for SSM
 
 resource "aws_iam_role" "ec2_ssm" {
-  name = "${var.name}-ec2-ssm-role"
+  name = "${var.name}-${local.iam_suffix}-ec2-ssm-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -38,14 +38,14 @@ resource "aws_iam_role_policy_attachment" "ec2_ssm_core" {
 }
 
 resource "aws_iam_instance_profile" "ec2_ssm" {
-  name = "${var.name}-ec2-ssm-profile"
+  name = "${var.name}-${local.iam_suffix}-ec2-ssm-profile"
   role = aws_iam_role.ec2_ssm.name
 }
 
 ### IAM role + instance profile for Jenkins
 
 resource "aws_iam_role" "jenkins" {
-  name = "${var.name}-jenkins-role"
+  name = "${var.name}-${local.iam_suffix}-jenkins-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -63,7 +63,7 @@ resource "aws_iam_role_policy_attachment" "jenkins_ssm_core" {
 }
 
 resource "aws_iam_role_policy" "jenkins_s3" {
-  name = "${var.name}-jenkins-s3"
+  name = "${var.name}-${local.iam_suffix}-jenkins-s3"
   role = aws_iam_role.jenkins.id
 
   policy = jsonencode({
@@ -84,7 +84,7 @@ resource "aws_iam_role_policy" "jenkins_s3" {
 }
 
 resource "aws_iam_instance_profile" "jenkins" {
-  name = "${var.name}-jenkins-profile"
+  name = "${var.name}-${local.iam_suffix}-jenkins-profile"
   role = aws_iam_role.jenkins.name
 }
 
@@ -93,6 +93,8 @@ resource "aws_iam_instance_profile" "jenkins" {
 locals {
   subnet_a = var.subnet_ids[0]
   subnet_b = length(var.subnet_ids) > 1 ? var.subnet_ids[1] : var.subnet_ids[0]
+
+  iam_suffix = "${var.env}-${var.aws_region}"
 }
 
 ### Load Balancer instance

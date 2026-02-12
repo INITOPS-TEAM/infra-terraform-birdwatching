@@ -108,3 +108,8 @@ variable "instance_type_jenkins" {
   description = "EC2 instance type for Jenkins instance"
   type        = string
 }
+
+variable "env" {
+  description = "Deployment environment"
+  type        = string
+}
