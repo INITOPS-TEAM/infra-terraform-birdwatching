@@ -22,19 +22,16 @@ variable "associate_public_ip" {
 variable "instance_type_lb" {
   description = "EC2 instance type for the load balancer VM"
   type        = string
-  default     = "t3.micro"
 }
 
 variable "instance_type_app" {
   description = "EC2 instance type for application VMs"
   type        = string
-  default     = "t3.micro"
 }
 
 variable "instance_type_db" {
   description = "EC2 instance type for the database VM"
   type        = string
-  default     = "t3.micro"
 }
 
 variable "sg_lb_id" {
@@ -55,13 +52,11 @@ variable "sg_db_id" {
 variable "instance_type_consul" {
   description = "EC2 instance type for Consul VM"
   type        = string
-  default     = "t3.micro"
 }
 
 variable "instance_type_jenkins" {
   description = "EC2 instance type for Jenkins VM"
   type        = string
-  default     = "t3.micro"
 }
 
 variable "sg_consul_id" {

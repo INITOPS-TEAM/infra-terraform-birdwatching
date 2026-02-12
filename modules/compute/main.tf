@@ -1,6 +1,4 @@
-################################
-# AMI: Ubuntu 24.04 LTS (Noble)
-################################
+### AMI: Ubuntu 24.04 LTS
 
 data "aws_ami" "ubuntu_2404" {
   most_recent = true
@@ -17,9 +15,7 @@ data "aws_ami" "ubuntu_2404" {
   }
 }
 
-################################
-# IAM role + instance profile for SSM
-################################
+### IAM role + instance profile for SSM
 
 resource "aws_iam_role" "ec2_ssm" {
   name = "${var.name}-ec2-ssm-role"
@@ -46,9 +42,7 @@ resource "aws_iam_instance_profile" "ec2_ssm" {
   role = aws_iam_role.ec2_ssm.name
 }
 
-##############################
-# IAM role + instance profile for Jenkins
-###############################
+### IAM role + instance profile for Jenkins
 
 resource "aws_iam_role" "jenkins" {
   name = "${var.name}-jenkins-role"
@@ -94,18 +88,14 @@ resource "aws_iam_instance_profile" "jenkins" {
   role = aws_iam_role.jenkins.name
 }
 
-################################
-# Local placement helpers
-################################
+### Local placement helpers
 
 locals {
   subnet_a = var.subnet_ids[0]
   subnet_b = length(var.subnet_ids) > 1 ? var.subnet_ids[1] : var.subnet_ids[0]
 }
 
-################################
-# Load Balancer instance
-################################
+### Load Balancer instance
 
 resource "aws_instance" "lb" {
   ami           = data.aws_ami.ubuntu_2404.id
@@ -124,9 +114,7 @@ resource "aws_instance" "lb" {
   }
 }
 
-################################
-# Application instances
-################################
+### Application instances
 
 resource "aws_instance" "app_1" {
   ami           = data.aws_ami.ubuntu_2404.id
@@ -162,9 +150,7 @@ resource "aws_instance" "app_2" {
   }
 }
 
-################################
-# Database instance
-################################
+### Database instance
 
 resource "aws_instance" "db" {
   ami           = data.aws_ami.ubuntu_2404.id
@@ -183,9 +169,7 @@ resource "aws_instance" "db" {
   }
 }
 
-################################
-# Consul instance
-################################
+### Consul instance
 
 resource "aws_instance" "consul" {
   ami           = data.aws_ami.ubuntu_2404.id
@@ -204,9 +188,7 @@ resource "aws_instance" "consul" {
   }
 }
 
-################################
 # Jenkins instance
-################################
 
 resource "aws_instance" "jenkins" {
   ami           = data.aws_ami.ubuntu_2404.id

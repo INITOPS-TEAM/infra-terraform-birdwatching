@@ -77,19 +77,16 @@ variable "associate_public_ip" {
 variable "instance_type_lb" {
   description = "EC2 instance type for the load balancer"
   type        = string
-  default     = "t3.micro"
 }
 
 variable "instance_type_app" {
   description = "EC2 instance type for app instances"
   type        = string
-  default     = "t3.micro"
 }
 
 variable "instance_type_db" {
   description = "EC2 instance type for db instance"
   type        = string
-  default     = "t3.micro"
 }
 
 variable "enable_jenkins_ui" {
@@ -105,11 +102,9 @@ variable "jenkins_ui_cidr_allowlist" {
 variable "instance_type_consul" {
   description = "EC2 instance type for Consul instance"
   type        = string
-  default     = "t3.micro"
 }
 
 variable "instance_type_jenkins" {
   description = "EC2 instance type for Jenkins instance"
   type        = string
-  default     = "t3.micro"
 }

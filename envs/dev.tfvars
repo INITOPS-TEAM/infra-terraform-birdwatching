@@ -29,3 +29,9 @@ consul_ui_cidr_allowlist = []
 
 enable_jenkins_ui         = true
 jenkins_ui_cidr_allowlist = ["0.0.0.0/0"]
+
+instance_type_jenkins = "t3.small"
+instance_type_lb = "t3.micro"
+instance_type_app = "t3.micro"
+instance_type_db = "t3.micro"
+instance_type_consul = "t3.micro"
