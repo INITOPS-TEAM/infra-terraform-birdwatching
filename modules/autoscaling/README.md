@@ -39,5 +39,5 @@ Manages auto-scaling infrastructure for Flask application instances using AWS Au
 - Scale up when CPU > 70% for 10 minutes
 - Scale down when CPU < 30% for 10 minutes
 - Cooldown period: 5 minutes
-- App deployment handled by Jenkins/Ansible (not in user_data)
+- App deployment handled by Jenkins/Ansible
 - Instances tagged with `Role=app` for Jenkins discovery
