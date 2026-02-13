@@ -22,3 +22,8 @@ output "sg_jenkins_id" {
   description = "Security group ID for Jenkins instance"
   value       = aws_security_group.jenkins.id
 }
+
+output "sg_alb_id" {
+  description = "Security group ID for the Application Load Balancer"
+  value       = aws_security_group.alb.id
+}

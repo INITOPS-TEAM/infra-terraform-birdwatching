@@ -387,3 +387,65 @@ resource "aws_vpc_security_group_egress_rule" "jenkins_all_out" {
   ip_protocol       = "-1"
   cidr_ipv4         = "0.0.0.0/0"
 }
+
+################################
+# ALB Security Group
+################################
+
+resource "aws_security_group" "alb" {
+  name        = "${var.name}-sg-alb"
+  description = "Application Load Balancer security group"
+  vpc_id      = var.vpc_id
+
+  tags = {
+    Name = "${var.name}-sg-alb"
+  }
+}
+
+################################
+# ALB Ingress (HTTP/HTTPS from internet)
+################################
+
+resource "aws_vpc_security_group_ingress_rule" "alb_http" {
+  description       = "HTTP from internet"
+  security_group_id = aws_security_group.alb.id
+  ip_protocol       = "tcp"
+  from_port         = 80
+  to_port           = 80
+  cidr_ipv4         = "0.0.0.0/0"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "alb_https" {
+  description       = "HTTPS from internet"
+  security_group_id = aws_security_group.alb.id
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
+  cidr_ipv4         = "0.0.0.0/0"
+}
+
+################################
+# ALB to App (forward traffic)
+################################
+
+resource "aws_vpc_security_group_egress_rule" "alb_to_app" {
+  description                  = "Forward traffic to app instances"
+  security_group_id            = aws_security_group.alb.id
+  ip_protocol                  = "tcp"
+  from_port                    = var.app_port
+  to_port                      = var.app_port
+  referenced_security_group_id = aws_security_group.app.id
+}
+
+################################
+# App accepts traffic from ALB
+################################
+
+resource "aws_vpc_security_group_ingress_rule" "app_from_alb" {
+  description                  = "App traffic from ALB"
+  security_group_id            = aws_security_group.app.id
+  ip_protocol                  = "tcp"
+  from_port                    = var.app_port
+  to_port                      = var.app_port
+  referenced_security_group_id = aws_security_group.alb.id
+}
