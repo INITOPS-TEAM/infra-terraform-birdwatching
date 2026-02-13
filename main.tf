@@ -51,3 +51,24 @@ module "compute" {
 
   s3_bucket_name = var.bucket_name
 }
+
+module "autoscaling" {
+  source = "./modules/autoscaling"
+
+  name       = var.name
+  vpc_id     = module.network.vpc_id
+  subnet_ids = module.network.public_subnet_ids
+  key_name   = var.key_name
+
+  sg_alb_id = module.security.sg_alb_id
+  sg_app_id = module.security.sg_app_id
+
+  app_port          = var.app_port
+  instance_type_app = var.instance_type_app
+
+  iam_instance_profile_name = module.compute.ec2_ssm_instance_profile_name
+
+  asg_min_size         = var.asg_min_size
+  asg_max_size         = var.asg_max_size
+  asg_desired_capacity = var.asg_desired_capacity
+}

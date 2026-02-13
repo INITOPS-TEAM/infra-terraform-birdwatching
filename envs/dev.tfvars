@@ -29,3 +29,7 @@ consul_ui_cidr_allowlist = []
 
 enable_jenkins_ui         = true
 jenkins_ui_cidr_allowlist = ["0.0.0.0/0"]
+
+asg_min_size         = 2
+asg_max_size         = 4
+asg_desired_capacity = 2

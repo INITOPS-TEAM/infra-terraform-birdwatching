@@ -52,3 +52,18 @@ output "jenkins_public_ip" {
   description = "Public IP of Jenkins"
   value       = module.compute.jenkins_public_ip
 }
+
+output "alb_dns_name" {
+  description = "DNS name of the ALB"
+  value       = module.autoscaling.alb_dns_name
+}
+
+output "alb_zone_id" {
+  description = "Zone ID of the ALB for Route53"
+  value       = module.autoscaling.alb_zone_id
+}
+
+output "asg_name" {
+  description = "Auto Scaling Group name"
+  value       = module.autoscaling.asg_name
+}

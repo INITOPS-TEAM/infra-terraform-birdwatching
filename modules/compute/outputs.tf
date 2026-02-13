@@ -47,3 +47,8 @@ output "jenkins_private_ip" {
   description = "Private IP of the Jenkins instance"
   value       = aws_instance.jenkins.private_ip
 }
+
+output "ec2_ssm_instance_profile_name" {
+  description = "Name of the IAM instance profile for SSM access"
+  value       = aws_iam_instance_profile.ec2_ssm.name
+}
