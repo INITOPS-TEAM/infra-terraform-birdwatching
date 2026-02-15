@@ -160,17 +160,6 @@ resource "aws_vpc_security_group_ingress_rule" "ssh_to_jenkins" {
   cidr_ipv4         = each.value
 }
 
-### App SSH from Jenkins (deploy)
-
-resource "aws_vpc_security_group_ingress_rule" "ssh_to_app_from_jenkins" {
-  description                  = "SSH deploy access from Jenkins"
-  security_group_id            = aws_security_group.app.id
-  ip_protocol                  = "tcp"
-  from_port                    = 22
-  to_port                      = 22
-  referenced_security_group_id = aws_security_group.jenkins.id
-}
-
 ### SSH between instances (ALL to ALL)
 
 locals {
