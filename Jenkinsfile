@@ -32,7 +32,7 @@ pipeline {
                             terraformApply = '-auto-approve'    
                         } 
                         sh "echo terraformApply: ${terraformApply}"
-                        sh "terraform -var-file ${params.env} ${terraformApply} apply"
+                        sh "terraform apply -var-file envs/${params.env}.tfvars ${terraformApply}"
                     }
                 }
             }
