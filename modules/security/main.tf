@@ -12,8 +12,8 @@ resource "aws_security_group" "internal" {
 
 ### Consul inbound (internal only)
 
-resource "aws_vpc_security_group_ingress_rule" "consul_8300_from_app" {
-  description                  = "Consul RPC 8300 tcp from app"
+resource "aws_vpc_security_group_ingress_rule" "consul_8300_from_internal" {
+  description                  = "Consul RPC 8300 tcp from internal SG"
   security_group_id            = aws_security_group.internal.id
   ip_protocol                  = "tcp"
   from_port                    = 8300
@@ -21,8 +21,8 @@ resource "aws_vpc_security_group_ingress_rule" "consul_8300_from_app" {
   referenced_security_group_id = aws_security_group.internal.id
 }
 
-resource "aws_vpc_security_group_ingress_rule" "consul_8301_tcp_from_app" {
-  description                  = "Consul gossip LAN 8301 tcp from app"
+resource "aws_vpc_security_group_ingress_rule" "consul_8301_tcp_from_internal" {
+  description                  = "Consul gossip LAN 8301 tcp from internal SG"
   security_group_id            = aws_security_group.internal.id
   ip_protocol                  = "tcp"
   from_port                    = 8301
@@ -30,8 +30,8 @@ resource "aws_vpc_security_group_ingress_rule" "consul_8301_tcp_from_app" {
   referenced_security_group_id = aws_security_group.internal.id
 }
 
-resource "aws_vpc_security_group_ingress_rule" "consul_8301_udp_from_app" {
-  description                  = "Consul gossip LAN 8301 udp from app"
+resource "aws_vpc_security_group_ingress_rule" "consul_8301_udp_from_internal" {
+  description                  = "Consul gossip LAN 8301 udp from internal SG"
   security_group_id            = aws_security_group.internal.id
   ip_protocol                  = "udp"
   from_port                    = 8301
@@ -40,8 +40,8 @@ resource "aws_vpc_security_group_ingress_rule" "consul_8301_udp_from_app" {
 }
 
 # 8600: DNS from app (tcp/udp)
-resource "aws_vpc_security_group_ingress_rule" "consul_8600_tcp_from_app" {
-  description                  = "Consul DNS 8600 tcp from app"
+resource "aws_vpc_security_group_ingress_rule" "consul_8600_tcp_from_internal" {
+  description                  = "Consul DNS 8600 tcp from internal SG"
   security_group_id            = aws_security_group.internal.id
   ip_protocol                  = "tcp"
   from_port                    = 8600
@@ -49,8 +49,8 @@ resource "aws_vpc_security_group_ingress_rule" "consul_8600_tcp_from_app" {
   referenced_security_group_id = aws_security_group.internal.id
 }
 
-resource "aws_vpc_security_group_ingress_rule" "consul_8600_udp_from_app" {
-  description                  = "Consul DNS 8600 udp from app"
+resource "aws_vpc_security_group_ingress_rule" "consul_8600_udp_from_internal" {
+  description                  = "Consul DNS 8600 udp from internal SG"
   security_group_id            = aws_security_group.internal.id
   ip_protocol                  = "udp"
   from_port                    = 8600

@@ -15,15 +15,11 @@ Purpose:
 - Used for internal traffic (Consul, SSH between services)
 - Allows outbound traffic to anywhere (0.0.0.0/0)
 
-Outbound rule:
-- All protocols
-- Destination 0.0.0.0/0
-
 ## 2. Consul inbound
 
 Inbound rules are attached to the internal security group.
 
-These rules allow internal cluster communication using security group references.
+These rules allow Consul internal cluster communication using security group references.
 
 Allowed ports:
 - 8300 TCP - Consul RPC
@@ -32,7 +28,7 @@ Allowed ports:
 - 8600 TCP - Consul DNS
 - 8600 UDP - Consul DNS
 
-Source: `${var.name}-sg-internal`
+Source: SG internal.
 
 It ensures only cluster members can communicate with Consul.
 
@@ -44,7 +40,7 @@ Security rule:
 
 - Port 8080 TCP
 - Source - 0.0.0.0/0
-- Target - `${var.name}-sg-jenkins`
+- Target - Security Group jenkins
 
 ## 4. SSH Rules
 
@@ -53,18 +49,18 @@ It allows Jenkins to SSH into internal instances. Preferred access method - AWS 
 SSH configuration:
 
 - Port 22 TCP
-- Source - `${var.name}-sg-jenkins`
-- Target - `${var.name}-sg-internal`
+- Source - Security Group jenkins
+- Target - Security Group internal
 
 ## 5. Role Security Groups
 
 The module creates separate security groups per role:
 
-- `${var.name}-sg-lb`
-- `${var.name}-sg-app`
-- `${var.name}-sg-db`
-- `${var.name}-sg-consul`
-- `${var.name}-sg-jenkins`
+- Security Group lb
+- Security Group app
+- Security Group db
+- Security Group consul
+- Security Group jenkins
 
 Each group is created inside the provided VPC.
 
@@ -82,8 +78,8 @@ Only Load Balancer is publicly exposed.
 Traffic allowed from Load Balancer to Application instances.
 
 - Port - `var.app_port`
-- Source - `${var.name}-sg-lb`
-- Target - `${var.name}-sg-app`
+- Source - Security Group lb
+- Target - Security Group app
 
 Application instances are not publicly accessible.
 
@@ -92,8 +88,8 @@ Application instances are not publicly accessible.
 Traffic allowed from PostreSQL to Application instances
 
 - Port - 5432
-- Source - `${var.name}-sg-app`
-- Target - `${var.name}-sg-db`
+- Source - Security Group app
+- Target - Security Group db
 
 No public access to the database.
 
