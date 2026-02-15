@@ -6,11 +6,11 @@ pipeline {
         choices: ['dev', 'stage', 'prod'], 
         description: 'Environment deployed by Terraform'
         )
-        // booleanParam(
-        //  defaultValue: false,
-        //  description: 'Use -auto-approve Terraform option',
-        //  name: 'terraform_apply'
-        // )   
+        booleanParam(
+         defaultValue: false,
+         description: 'Use -auto-approve Terraform option',
+         name: 'terraform_apply'
+        )   
     }
     stages {
         stage('Prepare & Check') {
