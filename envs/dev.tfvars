@@ -26,7 +26,7 @@ app_port = 5000
 enable_ssh         = false
 ssh_cidr_allowlist = ["0.0.0.0/0"]
 
-enable_consul_ui         = false
+enable_consul_ui         = true
 consul_ui_cidr_allowlist = []
 
 enable_jenkins_ui         = true

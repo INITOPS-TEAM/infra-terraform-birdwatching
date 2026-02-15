@@ -377,6 +377,18 @@ resource "aws_vpc_security_group_ingress_rule" "consul_8500_ui" {
   cidr_ipv4         = each.value
 }
 
+# 8501: UI/API from allowlist only
+resource "aws_vpc_security_group_ingress_rule" "consul_8501_ui_https" {
+  for_each = var.enable_consul_ui ? toset(var.consul_ui_cidr_allowlist) : toset([])
+
+  description       = "Consul UI 8501 https from allowlist"
+  security_group_id = aws_security_group.consul.id
+  ip_protocol       = "tcp"
+  from_port         = 8501
+  to_port           = 8501
+  cidr_ipv4         = each.value
+}
+
 ### Jenkins inbound (UI)
 
 resource "aws_vpc_security_group_ingress_rule" "jenkins_8080_ui" {
