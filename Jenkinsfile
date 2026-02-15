@@ -1,8 +1,7 @@
 pipeline {
     agent any 
     parameters {
-        choice(name: 'env', choices: ['dev', 'stage', 'prod'], description: 'Environment deployed by Terraform'), 
-
+        // choice(name: 'env', choices: ['dev', 'stage', 'prod'], description: 'Environment deployed by Terraform'), 
         booleanParam(
          defaultValue: false,
          description: 'Use -auto-approve Terraform option',
