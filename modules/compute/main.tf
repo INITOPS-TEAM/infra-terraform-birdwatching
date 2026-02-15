@@ -1,6 +1,4 @@
-################################
-# AMI: Ubuntu 24.04 LTS (Noble)
-################################
+### AMI: Ubuntu 24.04 LTS
 
 data "aws_ami" "ubuntu_2404" {
   most_recent = true
@@ -17,12 +15,10 @@ data "aws_ami" "ubuntu_2404" {
   }
 }
 
-################################
-# IAM role + instance profile for SSM
-################################
+### IAM role + instance profile for SSM
 
 resource "aws_iam_role" "ec2_ssm" {
-  name = "${var.name}-ec2-ssm-role"
+  name = "${var.name}-${local.iam_suffix}-ec2-ssm-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -42,16 +38,14 @@ resource "aws_iam_role_policy_attachment" "ec2_ssm_core" {
 }
 
 resource "aws_iam_instance_profile" "ec2_ssm" {
-  name = "${var.name}-ec2-ssm-profile"
+  name = "${var.name}-${local.iam_suffix}-ec2-ssm-profile"
   role = aws_iam_role.ec2_ssm.name
 }
 
-##############################
-# IAM role + instance profile for Jenkins
-###############################
+### IAM role + instance profile for Jenkins
 
 resource "aws_iam_role" "jenkins" {
-  name = "${var.name}-jenkins-role"
+  name = "${var.name}-${local.iam_suffix}-jenkins-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -69,7 +63,7 @@ resource "aws_iam_role_policy_attachment" "jenkins_ssm_core" {
 }
 
 resource "aws_iam_role_policy" "jenkins_s3" {
-  name = "${var.name}-jenkins-s3"
+  name = "${var.name}-${local.iam_suffix}-jenkins-s3"
   role = aws_iam_role.jenkins.id
 
   policy = jsonencode({
@@ -90,22 +84,20 @@ resource "aws_iam_role_policy" "jenkins_s3" {
 }
 
 resource "aws_iam_instance_profile" "jenkins" {
-  name = "${var.name}-jenkins-profile"
+  name = "${var.name}-${local.iam_suffix}-jenkins-profile"
   role = aws_iam_role.jenkins.name
 }
 
-################################
-# Local placement helpers
-################################
+### Local placement helpers
 
 locals {
   subnet_a = var.subnet_ids[0]
   subnet_b = length(var.subnet_ids) > 1 ? var.subnet_ids[1] : var.subnet_ids[0]
+
+  iam_suffix = "${var.env}-${var.aws_region}"
 }
 
-################################
-# Load Balancer instance
-################################
+### Load Balancer instance
 
 resource "aws_instance" "lb" {
   ami           = data.aws_ami.ubuntu_2404.id
@@ -113,7 +105,7 @@ resource "aws_instance" "lb" {
   key_name      = var.key_name
 
   subnet_id                   = local.subnet_a
-  vpc_security_group_ids      = [var.sg_lb_id]
+  vpc_security_group_ids      = [var.sg_internal_id, var.sg_lb_id]
   associate_public_ip_address = var.associate_public_ip
 
   iam_instance_profile = aws_iam_instance_profile.ec2_ssm.name
@@ -124,9 +116,7 @@ resource "aws_instance" "lb" {
   }
 }
 
-################################
-# Application instances
-################################
+### Application instances
 
 resource "aws_instance" "app_1" {
   ami           = data.aws_ami.ubuntu_2404.id
@@ -134,7 +124,7 @@ resource "aws_instance" "app_1" {
   key_name      = var.key_name
 
   subnet_id                   = local.subnet_a
-  vpc_security_group_ids      = [var.sg_app_id]
+  vpc_security_group_ids      = [var.sg_internal_id, var.sg_app_id]
   associate_public_ip_address = var.associate_public_ip
 
   iam_instance_profile = aws_iam_instance_profile.ec2_ssm.name
@@ -151,7 +141,7 @@ resource "aws_instance" "app_2" {
   key_name      = var.key_name
 
   subnet_id                   = local.subnet_b
-  vpc_security_group_ids      = [var.sg_app_id]
+  vpc_security_group_ids      = [var.sg_internal_id, var.sg_app_id]
   associate_public_ip_address = var.associate_public_ip
 
   iam_instance_profile = aws_iam_instance_profile.ec2_ssm.name
@@ -162,9 +152,7 @@ resource "aws_instance" "app_2" {
   }
 }
 
-################################
-# Database instance
-################################
+### Database instance
 
 resource "aws_instance" "db" {
   ami           = data.aws_ami.ubuntu_2404.id
@@ -172,7 +160,7 @@ resource "aws_instance" "db" {
   key_name      = var.key_name
 
   subnet_id                   = local.subnet_b
-  vpc_security_group_ids      = [var.sg_db_id]
+  vpc_security_group_ids      = [var.sg_internal_id, var.sg_db_id]
   associate_public_ip_address = var.associate_public_ip
 
   iam_instance_profile = aws_iam_instance_profile.ec2_ssm.name
@@ -183,9 +171,7 @@ resource "aws_instance" "db" {
   }
 }
 
-################################
-# Consul instance
-################################
+### Consul instance
 
 resource "aws_instance" "consul" {
   ami           = data.aws_ami.ubuntu_2404.id
@@ -193,7 +179,7 @@ resource "aws_instance" "consul" {
   key_name      = var.key_name
 
   subnet_id                   = local.subnet_b
-  vpc_security_group_ids      = [var.sg_consul_id]
+  vpc_security_group_ids      = [var.sg_internal_id, var.sg_consul_id]
   associate_public_ip_address = var.associate_public_ip
 
   iam_instance_profile = aws_iam_instance_profile.ec2_ssm.name
@@ -204,9 +190,7 @@ resource "aws_instance" "consul" {
   }
 }
 
-################################
 # Jenkins instance
-################################
 
 resource "aws_instance" "jenkins" {
   ami           = data.aws_ami.ubuntu_2404.id
@@ -214,7 +198,7 @@ resource "aws_instance" "jenkins" {
   key_name      = var.key_name
 
   subnet_id                   = local.subnet_a
-  vpc_security_group_ids      = [var.sg_jenkins_id]
+  vpc_security_group_ids      = [var.sg_internal_id, var.sg_jenkins_id]
   associate_public_ip_address = var.associate_public_ip
 
   user_data = file("${path.module}/user_data/jenkins.sh")

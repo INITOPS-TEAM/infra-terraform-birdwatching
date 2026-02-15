@@ -36,6 +36,8 @@ module "compute" {
   subnet_ids          = module.network.public_subnet_ids
   key_name            = var.key_name
   associate_public_ip = var.associate_public_ip
+  env                 = var.env
+  aws_region          = var.aws_region
 
   instance_type_lb      = var.instance_type_lb
   instance_type_app     = var.instance_type_app
@@ -48,6 +50,8 @@ module "compute" {
   sg_db_id      = module.security.sg_db_id
   sg_consul_id  = module.security.sg_consul_id
   sg_jenkins_id = module.security.sg_jenkins_id
+
+  sg_internal_id = module.security.sg_internal_id
 
   s3_bucket_name = var.bucket_name
 }

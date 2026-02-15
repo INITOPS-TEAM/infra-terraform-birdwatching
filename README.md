@@ -1,13 +1,15 @@
 # infra-terraform-birdwatching
 
-Terraform codebase for AWS lab infrastructure.
+Terraform codebase for AWS lab infrastructure. Infrastructure is deployed in **eu-north-1** and follows a multi-environment structure using environment-specific tfvars files.
 
-Provisions and manages:
-- S3 remote backend for Terraform state (native S3 locking)
-- VPC, subnets, routing
+The project provisions:
+- VPC with public subnets (no NAT)
 - Security groups
-- EC2 instances (LB,app-1,app-2,DB)
+- EC2 instances (LB, app-1, app-2, DB, Consul, Jenkins)
 - IAM role and instance profile for AWS SSM
+- Application S3 bucket (via `/modules/s3`)
+
+Terraform state is stored remotely in S3 (separate backend bucket).
 
 ---
 ## Requirements
@@ -17,20 +19,57 @@ Provisions and manages:
 - AWS account with EC2, VPC, IAM, S3 permissions
 
 ---
-## Backend
+## Bootstrap (Terraform Backend initialization)
 
-Terraform state is stored in S3 with native locking (no DynamoDB).
+Terraform state is stored in S3 with native locking (no DynamoDB) in **eu-north-1**.
 
-```bash
+Because Terraform cannot use an S3 backend before the bucket exists, a separate `bootstrap/` configuration is provided.
+
+Bootstrap backend (run once per region):
+
+``` bash
+cd bootstrap
+
 export AWS_PROFILE=iac
-export AWS_REGION=eu-central-1
+export AWS_REGION=eu-north-1
+
+terraform init
+terraform apply
+```
+
+This creates S3 bucket for Terraform state. After successful execution, return to the root directory.
+
+Initialize main infrastructure:
+
+``` bash
+cd ..
+
 terraform init
 ```
 
+If backend configuration was changed (during region migration):
+
+``` bash
+terraform init -reconfigure
+terraform init -migrate-state
+```
+
+Always verify state after migration:
+
+``` bash
+terraform state list
+```
 ---
 ## Repository structure
 
 ```
+├── bootstrap/
+│   ├── main.tf
+│   ├── variables.tf
+├── envs/
+│   ├── dev.tfvars
+│   ├── stage.tfvars.example
+│   ├── prod.tfvars.example
 ├── modules/        
 │   ├── compute/    
 │   ├── network/        
@@ -47,8 +86,10 @@ terraform init
 ```
 ## Root files overview
 
+- **bootstrap/**
+  Separate Terraform configuration used only for creating the backend S3 bucket. Must be executed before initializing the main infrastructure.
 - **`backend.tf`**  
-  Configures Terraform backend (where state is stored). Changes here may affect state location - handle with care
+  Defines Terraform backend (where state is stored).
 - **`provider.tf`**  
   Defines the AWS provider and global settings (region, profile).
 - **`main.tf`**  
@@ -74,25 +115,25 @@ Each directory under `modules/` is a self-contained Terraform module with its ow
 Modules are not applied directly - they are consumed from `main.tf` in the root module.
 
 ---
-## Configuration
+## Multi-environment configuration
 
-Environment-specific values are passed via `-var-file`.
+Environment-specific values are passed via 
 
-Example:
+    `-var-file=envs/<environment>.tfvars`
+
+Example (dev):
 ```hcl
 aws_profile = "iac"
-aws_region  = "eu-central-1"
+aws_region  = "eu-north-1"
 name        = "pictapp-dev"
 key_name    = "<existing_ec2_keypair_name>"
 ```
 
 ---
-## Usage
+## Usage (dev)
 
 ```bash
-terraform fmt -recursive
-terraform validate
-terraform plan  -var-file=envs/dev.tfvars
+terraform plan -var-file=envs/dev.tfvars
 terraform apply -var-file=envs/dev.tfvars
 ```
 
@@ -100,6 +141,6 @@ terraform apply -var-file=envs/dev.tfvars
 ## Notes
 - Ubuntu 24.04 LTS is used for all EC2 instances
 - All instances have an SSM role attached
-- Instances currently run in public subnets (lab setup, no NAT)
-- App and DB ports are restricted via security groups
+- Instances currently run in public subnets.
+- Security groups allow internal SG-to-SG SSH communication.
 
