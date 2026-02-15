@@ -175,10 +175,10 @@ resource "aws_vpc_security_group_ingress_rule" "ssh_to_app_from_jenkins" {
 
 locals {
   ssh_sg_ids = {
-    lb     = aws_security_group.lb.id
-    app    = aws_security_group.app.id
-    db     = aws_security_group.db.id
-    consul = aws_security_group.consul.id
+    lb      = aws_security_group.lb.id
+    app     = aws_security_group.app.id
+    db      = aws_security_group.db.id
+    consul  = aws_security_group.consul.id
     jenkins = aws_security_group.jenkins.id
   }
 }
