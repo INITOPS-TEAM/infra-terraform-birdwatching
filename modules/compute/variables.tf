@@ -83,3 +83,8 @@ variable "aws_region" {
   description = "AWS region for deployment"
   type        = string
 }
+
+variable "sg_internal_id" {
+  description = "Shared internal security group ID (attach to all instances)"
+  type        = string
+}

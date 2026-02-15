@@ -105,7 +105,7 @@ resource "aws_instance" "lb" {
   key_name      = var.key_name
 
   subnet_id                   = local.subnet_a
-  vpc_security_group_ids      = [var.sg_lb_id]
+  vpc_security_group_ids      = [var.sg_internal_id, var.sg_lb_id]
   associate_public_ip_address = var.associate_public_ip
 
   iam_instance_profile = aws_iam_instance_profile.ec2_ssm.name
@@ -124,7 +124,7 @@ resource "aws_instance" "app_1" {
   key_name      = var.key_name
 
   subnet_id                   = local.subnet_a
-  vpc_security_group_ids      = [var.sg_app_id]
+  vpc_security_group_ids      = [var.sg_internal_id, var.sg_app_id]
   associate_public_ip_address = var.associate_public_ip
 
   iam_instance_profile = aws_iam_instance_profile.ec2_ssm.name
@@ -141,7 +141,7 @@ resource "aws_instance" "app_2" {
   key_name      = var.key_name
 
   subnet_id                   = local.subnet_b
-  vpc_security_group_ids      = [var.sg_app_id]
+  vpc_security_group_ids      = [var.sg_internal_id, var.sg_app_id]
   associate_public_ip_address = var.associate_public_ip
 
   iam_instance_profile = aws_iam_instance_profile.ec2_ssm.name
@@ -160,7 +160,7 @@ resource "aws_instance" "db" {
   key_name      = var.key_name
 
   subnet_id                   = local.subnet_b
-  vpc_security_group_ids      = [var.sg_db_id]
+  vpc_security_group_ids      = [var.sg_internal_id, var.sg_db_id]
   associate_public_ip_address = var.associate_public_ip
 
   iam_instance_profile = aws_iam_instance_profile.ec2_ssm.name
@@ -179,7 +179,7 @@ resource "aws_instance" "consul" {
   key_name      = var.key_name
 
   subnet_id                   = local.subnet_b
-  vpc_security_group_ids      = [var.sg_consul_id]
+  vpc_security_group_ids      = [var.sg_internal_id, var.sg_consul_id]
   associate_public_ip_address = var.associate_public_ip
 
   iam_instance_profile = aws_iam_instance_profile.ec2_ssm.name
@@ -198,7 +198,7 @@ resource "aws_instance" "jenkins" {
   key_name      = var.key_name
 
   subnet_id                   = local.subnet_a
-  vpc_security_group_ids      = [var.sg_jenkins_id]
+  vpc_security_group_ids      = [var.sg_internal_id, var.sg_jenkins_id]
   associate_public_ip_address = var.associate_public_ip
 
   user_data = file("${path.module}/user_data/jenkins.sh")

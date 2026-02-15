@@ -22,3 +22,8 @@ output "sg_jenkins_id" {
   description = "Security group ID for Jenkins instance"
   value       = aws_security_group.jenkins.id
 }
+
+output "sg_internal_id" {
+  description = "Shared internal security group ID (attach to all instances)"
+  value       = aws_security_group.internal.id
+}

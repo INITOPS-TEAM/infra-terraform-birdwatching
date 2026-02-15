@@ -23,7 +23,7 @@ public_subnet_cidrs = [
 
 app_port = 5000
 
-enable_ssh         = false
+enable_ssh         = true
 ssh_cidr_allowlist = ["0.0.0.0/0"]
 
 enable_consul_ui         = true

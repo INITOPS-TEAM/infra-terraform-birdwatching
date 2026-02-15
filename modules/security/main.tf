@@ -1,4 +1,44 @@
-### Security groups (no inline rules)
+### Shared internal Security Group
+
+resource "aws_security_group" "internal" {
+  name        = "${var.name}-sg-internal"
+  description = "Shared internal SG for traffic in cluster"
+  vpc_id      = var.vpc_id
+
+  tags = {
+    Name = "${var.name}-sg-internal"
+  }
+}
+
+# Internal traffic between instances that have sg_internal attached
+resource "aws_vpc_security_group_ingress_rule" "internal_all_from_internal" {
+  description                  = "All traffic within internal SG"
+  security_group_id            = aws_security_group.internal.id
+  ip_protocol                  = "-1"
+  referenced_security_group_id = aws_security_group.internal.id
+}
+
+# SSH (temporary; prefer SSM)
+resource "aws_vpc_security_group_ingress_rule" "ssh_from_allowlist" {
+  for_each = var.enable_ssh ? toset(var.ssh_cidr_allowlist) : toset([])
+
+  description       = "SSH 22 from allowlist"
+  security_group_id = aws_security_group.internal.id
+  ip_protocol       = "tcp"
+  from_port         = 22
+  to_port           = 22
+  cidr_ipv4         = each.value
+}
+
+# Common outbound for all instances
+resource "aws_vpc_security_group_egress_rule" "internal_all_out" {
+  description       = "Outbound to anywhere"
+  security_group_id = aws_security_group.internal.id
+  ip_protocol       = "-1"
+  cidr_ipv4         = "0.0.0.0/0"
+}
+
+### Role Security Groups
 
 resource "aws_security_group" "lb" {
   name        = "${var.name}-sg-lb"
@@ -22,7 +62,7 @@ resource "aws_security_group" "app" {
 
 resource "aws_security_group" "db" {
   name        = "${var.name}-sg-db"
-  description = "PostgreSQL security group (only from app SG)"
+  description = "PostgreSQL security group"
   vpc_id      = var.vpc_id
 
   tags = {
@@ -32,7 +72,7 @@ resource "aws_security_group" "db" {
 
 resource "aws_security_group" "consul" {
   name        = "${var.name}-sg-consul"
-  description = "Consul server security group (internal access only; UI via allowlist)"
+  description = "Consul server security group"
   vpc_id      = var.vpc_id
 
   tags = {
@@ -42,7 +82,7 @@ resource "aws_security_group" "consul" {
 
 resource "aws_security_group" "jenkins" {
   name        = "${var.name}-sg-jenkins"
-  description = "Jenkins security group (UI via allowlist; deploy SSH to app)"
+  description = "Jenkins security group"
   vpc_id      = var.vpc_id
 
   tags = {
@@ -50,7 +90,7 @@ resource "aws_security_group" "jenkins" {
   }
 }
 
-### LB ingress (public web)
+### LB public ingress
 
 resource "aws_vpc_security_group_ingress_rule" "lb_http" {
   description       = "HTTP from internet"
@@ -70,21 +110,10 @@ resource "aws_vpc_security_group_ingress_rule" "lb_https" {
   cidr_ipv4         = "0.0.0.0/0"
 }
 
-### LB to App (only app_port)
-
-resource "aws_vpc_security_group_egress_rule" "lb_to_app" {
-  description                  = "Forward traffic to app instances"
-  security_group_id            = aws_security_group.lb.id
-  ip_protocol                  = "tcp"
-  from_port                    = var.app_port
-  to_port                      = var.app_port
-  referenced_security_group_id = aws_security_group.app.id
-}
-
-### App ingress (only from LB)
+### App ingress from LB
 
 resource "aws_vpc_security_group_ingress_rule" "app_from_lb" {
-  description                  = "App traffic from LB"
+  description                  = "App traffic from LB on app_port"
   security_group_id            = aws_security_group.app.id
   ip_protocol                  = "tcp"
   from_port                    = var.app_port
@@ -92,10 +121,10 @@ resource "aws_vpc_security_group_ingress_rule" "app_from_lb" {
   referenced_security_group_id = aws_security_group.lb.id
 }
 
-### DB ingress (only from App)
+### DB ingress from App
 
 resource "aws_vpc_security_group_ingress_rule" "db_from_app" {
-  description                  = "PostgreSQL from app instances only"
+  description                  = "PostgreSQL from app app SG"
   security_group_id            = aws_security_group.db.id
   ip_protocol                  = "tcp"
   from_port                    = 5432
@@ -103,273 +132,12 @@ resource "aws_vpc_security_group_ingress_rule" "db_from_app" {
   referenced_security_group_id = aws_security_group.app.id
 }
 
-### SSH (optional fallback; prefer SSM)
+### Consul UI
 
-resource "aws_vpc_security_group_ingress_rule" "ssh_to_lb" {
-  for_each = var.enable_ssh ? toset(var.ssh_cidr_allowlist) : toset([])
-
-  description       = "SSH to LB fallback prefer SSM"
-  security_group_id = aws_security_group.lb.id
-  ip_protocol       = "tcp"
-  from_port         = 22
-  to_port           = 22
-  cidr_ipv4         = each.value
-}
-
-resource "aws_vpc_security_group_ingress_rule" "ssh_to_app" {
-  for_each = var.enable_ssh ? toset(var.ssh_cidr_allowlist) : toset([])
-
-  description       = "SSH to app instances fallback prefer SSM"
-  security_group_id = aws_security_group.app.id
-  ip_protocol       = "tcp"
-  from_port         = 22
-  to_port           = 22
-  cidr_ipv4         = each.value
-}
-
-resource "aws_vpc_security_group_ingress_rule" "ssh_to_db" {
-  for_each = var.enable_ssh ? toset(var.ssh_cidr_allowlist) : toset([])
-
-  description       = "SSH to DB fallback prefer SSM"
-  security_group_id = aws_security_group.db.id
-  ip_protocol       = "tcp"
-  from_port         = 22
-  to_port           = 22
-  cidr_ipv4         = each.value
-}
-
-resource "aws_vpc_security_group_ingress_rule" "ssh_to_consul" {
-  for_each = var.enable_ssh ? toset(var.ssh_cidr_allowlist) : toset([])
-
-  description       = "SSH to Consul fallback prefer SSM"
-  security_group_id = aws_security_group.consul.id
-  ip_protocol       = "tcp"
-  from_port         = 22
-  to_port           = 22
-  cidr_ipv4         = each.value
-}
-
-resource "aws_vpc_security_group_ingress_rule" "ssh_to_jenkins" {
-  for_each = var.enable_ssh ? toset(var.ssh_cidr_allowlist) : toset([])
-
-  description       = "SSH to Jenkins fallback prefer SSM"
-  security_group_id = aws_security_group.jenkins.id
-  ip_protocol       = "tcp"
-  from_port         = 22
-  to_port           = 22
-  cidr_ipv4         = each.value
-}
-
-### SSH between instances (ALL to ALL)
-
-locals {
-  ssh_sg_ids = {
-    lb      = aws_security_group.lb.id
-    app     = aws_security_group.app.id
-    db      = aws_security_group.db.id
-    consul  = aws_security_group.consul.id
-    jenkins = aws_security_group.jenkins.id
-  }
-}
-
-# Ingress 22 to LB from all SGs
-resource "aws_vpc_security_group_ingress_rule" "ssh_lb_from_sgs" {
-  for_each = local.ssh_sg_ids
-
-  description                  = "SSH to LB from ${each.key}"
-  security_group_id            = aws_security_group.lb.id
-  ip_protocol                  = "tcp"
-  from_port                    = 22
-  to_port                      = 22
-  referenced_security_group_id = each.value
-}
-
-# Ingress 22 to App from all SGs
-resource "aws_vpc_security_group_ingress_rule" "ssh_app_from_sgs" {
-  for_each = local.ssh_sg_ids
-
-  description                  = "SSH to App from ${each.key}"
-  security_group_id            = aws_security_group.app.id
-  ip_protocol                  = "tcp"
-  from_port                    = 22
-  to_port                      = 22
-  referenced_security_group_id = each.value
-}
-
-# Ingress 22 to DB from all SGs
-resource "aws_vpc_security_group_ingress_rule" "ssh_db_from_sgs" {
-  for_each = local.ssh_sg_ids
-
-  description                  = "SSH to DB from ${each.key}"
-  security_group_id            = aws_security_group.db.id
-  ip_protocol                  = "tcp"
-  from_port                    = 22
-  to_port                      = 22
-  referenced_security_group_id = each.value
-}
-
-# Ingress 22 to Consul from all SGs
-resource "aws_vpc_security_group_ingress_rule" "ssh_consul_from_sgs" {
-  for_each = local.ssh_sg_ids
-
-  description                  = "SSH to Consul from ${each.key}"
-  security_group_id            = aws_security_group.consul.id
-  ip_protocol                  = "tcp"
-  from_port                    = 22
-  to_port                      = 22
-  referenced_security_group_id = each.value
-}
-
-# Ingress 22 to Jenkins from all SGs
-resource "aws_vpc_security_group_ingress_rule" "ssh_jenkins_from_sgs" {
-  for_each = local.ssh_sg_ids
-
-  description                  = "SSH to Jenkins from ${each.key}"
-  security_group_id            = aws_security_group.jenkins.id
-  ip_protocol                  = "tcp"
-  from_port                    = 22
-  to_port                      = 22
-  referenced_security_group_id = each.value
-}
-
-### Egress to Consul
-# Instances talk to Consul via private IP but SG-to-SG works regardless
-
-resource "aws_vpc_security_group_egress_rule" "app_to_consul_8500" {
-  description                  = "App to Consul HTTP API 8500 tcp"
-  security_group_id            = aws_security_group.app.id
-  ip_protocol                  = "tcp"
-  from_port                    = 8500
-  to_port                      = 8500
-  referenced_security_group_id = aws_security_group.consul.id
-}
-
-resource "aws_vpc_security_group_egress_rule" "app_to_consul_8600_tcp" {
-  description                  = "App to Consul DNS 8600 tcp"
-  security_group_id            = aws_security_group.app.id
-  ip_protocol                  = "tcp"
-  from_port                    = 8600
-  to_port                      = 8600
-  referenced_security_group_id = aws_security_group.consul.id
-}
-
-resource "aws_vpc_security_group_egress_rule" "app_to_consul_8600_udp" {
-  description                  = "App to Consul DNS 8600 udp"
-  security_group_id            = aws_security_group.app.id
-  ip_protocol                  = "udp"
-  from_port                    = 8600
-  to_port                      = 8600
-  referenced_security_group_id = aws_security_group.consul.id
-}
-
-resource "aws_vpc_security_group_egress_rule" "lb_to_consul_8500" {
-  description                  = "LB to Consul HTTP API 8500 tcp"
-  security_group_id            = aws_security_group.lb.id
-  ip_protocol                  = "tcp"
-  from_port                    = 8500
-  to_port                      = 8500
-  referenced_security_group_id = aws_security_group.consul.id
-}
-
-resource "aws_vpc_security_group_egress_rule" "lb_to_consul_8600_tcp" {
-  description                  = "LB to Consul DNS 8600 tcp"
-  security_group_id            = aws_security_group.lb.id
-  ip_protocol                  = "tcp"
-  from_port                    = 8600
-  to_port                      = 8600
-  referenced_security_group_id = aws_security_group.consul.id
-}
-
-resource "aws_vpc_security_group_egress_rule" "lb_to_consul_8600_udp" {
-  description                  = "LB to Consul DNS 8600 udp"
-  security_group_id            = aws_security_group.lb.id
-  ip_protocol                  = "udp"
-  from_port                    = 8600
-  to_port                      = 8600
-  referenced_security_group_id = aws_security_group.consul.id
-}
-
-resource "aws_vpc_security_group_egress_rule" "db_to_consul_8500" {
-  description                  = "DB to Consul HTTP API 8500 tcp"
-  security_group_id            = aws_security_group.db.id
-  ip_protocol                  = "tcp"
-  from_port                    = 8500
-  to_port                      = 8500
-  referenced_security_group_id = aws_security_group.consul.id
-}
-
-resource "aws_vpc_security_group_egress_rule" "db_to_consul_8600_tcp" {
-  description                  = "DB to Consul DNS 8600 tcp"
-  security_group_id            = aws_security_group.db.id
-  ip_protocol                  = "tcp"
-  from_port                    = 8600
-  to_port                      = 8600
-  referenced_security_group_id = aws_security_group.consul.id
-}
-
-resource "aws_vpc_security_group_egress_rule" "db_to_consul_8600_udp" {
-  description                  = "DB to Consul DNS 8600 udp"
-  security_group_id            = aws_security_group.db.id
-  ip_protocol                  = "udp"
-  from_port                    = 8600
-  to_port                      = 8600
-  referenced_security_group_id = aws_security_group.consul.id
-}
-
-### Consul inbound (internal only)
-
-# 8300-8302: internal (from app)
-resource "aws_vpc_security_group_ingress_rule" "consul_8300_from_app" {
-  description                  = "Consul RPC 8300 tcp from app"
-  security_group_id            = aws_security_group.consul.id
-  ip_protocol                  = "tcp"
-  from_port                    = 8300
-  to_port                      = 8300
-  referenced_security_group_id = aws_security_group.app.id
-}
-
-resource "aws_vpc_security_group_ingress_rule" "consul_8301_tcp_from_app" {
-  description                  = "Consul gossip LAN 8301 tcp from app"
-  security_group_id            = aws_security_group.consul.id
-  ip_protocol                  = "tcp"
-  from_port                    = 8301
-  to_port                      = 8301
-  referenced_security_group_id = aws_security_group.app.id
-}
-
-resource "aws_vpc_security_group_ingress_rule" "consul_8301_udp_from_app" {
-  description                  = "Consul gossip LAN 8301 udp from app"
-  security_group_id            = aws_security_group.consul.id
-  ip_protocol                  = "udp"
-  from_port                    = 8301
-  to_port                      = 8301
-  referenced_security_group_id = aws_security_group.app.id
-}
-
-# 8600: DNS from app (tcp/udp)
-resource "aws_vpc_security_group_ingress_rule" "consul_8600_tcp_from_app" {
-  description                  = "Consul DNS 8600 tcp from app"
-  security_group_id            = aws_security_group.consul.id
-  ip_protocol                  = "tcp"
-  from_port                    = 8600
-  to_port                      = 8600
-  referenced_security_group_id = aws_security_group.app.id
-}
-
-resource "aws_vpc_security_group_ingress_rule" "consul_8600_udp_from_app" {
-  description                  = "Consul DNS 8600 udp from app"
-  security_group_id            = aws_security_group.consul.id
-  ip_protocol                  = "udp"
-  from_port                    = 8600
-  to_port                      = 8600
-  referenced_security_group_id = aws_security_group.app.id
-}
-
-# 8500: UI/API from allowlist only (optional)
-resource "aws_vpc_security_group_ingress_rule" "consul_8500_ui" {
+resource "aws_vpc_security_group_ingress_rule" "consul_ui_8500" {
   for_each = var.enable_consul_ui ? toset(var.consul_ui_cidr_allowlist) : toset([])
 
-  description       = "Consul UI 8500 tcp from allowlist"
+  description       = "Consul UI/API 8500 from allowlist"
   security_group_id = aws_security_group.consul.id
   ip_protocol       = "tcp"
   from_port         = 8500
@@ -377,11 +145,10 @@ resource "aws_vpc_security_group_ingress_rule" "consul_8500_ui" {
   cidr_ipv4         = each.value
 }
 
-# 8501: UI/API from allowlist only
-resource "aws_vpc_security_group_ingress_rule" "consul_8501_ui_https" {
+resource "aws_vpc_security_group_ingress_rule" "consul_ui_8501" {
   for_each = var.enable_consul_ui ? toset(var.consul_ui_cidr_allowlist) : toset([])
 
-  description       = "Consul UI 8501 https from allowlist"
+  description       = "Consul UI/API 8501 from allowlist"
   security_group_id = aws_security_group.consul.id
   ip_protocol       = "tcp"
   from_port         = 8501
@@ -389,9 +156,9 @@ resource "aws_vpc_security_group_ingress_rule" "consul_8501_ui_https" {
   cidr_ipv4         = each.value
 }
 
-### Jenkins inbound (UI)
+### Jenkins UI
 
-resource "aws_vpc_security_group_ingress_rule" "jenkins_8080_ui" {
+resource "aws_vpc_security_group_ingress_rule" "jenkins_8080" {
   for_each = var.enable_jenkins_ui ? toset(var.jenkins_ui_cidr_allowlist) : toset([])
 
   description       = "Jenkins UI 8080 tcp from allowlist"
@@ -400,41 +167,4 @@ resource "aws_vpc_security_group_ingress_rule" "jenkins_8080_ui" {
   from_port         = 8080
   to_port           = 8080
   cidr_ipv4         = each.value
-}
-
-### General outbound
-
-resource "aws_vpc_security_group_egress_rule" "app_all_out" {
-  description       = "App outbound to internet for updates"
-  security_group_id = aws_security_group.app.id
-  ip_protocol       = "-1"
-  cidr_ipv4         = "0.0.0.0/0"
-}
-
-resource "aws_vpc_security_group_egress_rule" "db_all_out" {
-  description       = "DB outbound to internet for updates"
-  security_group_id = aws_security_group.db.id
-  ip_protocol       = "-1"
-  cidr_ipv4         = "0.0.0.0/0"
-}
-
-resource "aws_vpc_security_group_egress_rule" "consul_all_out" {
-  description       = "Consul outbound to internet for updates"
-  security_group_id = aws_security_group.consul.id
-  ip_protocol       = "-1"
-  cidr_ipv4         = "0.0.0.0/0"
-}
-
-resource "aws_vpc_security_group_egress_rule" "lb_all_out" {
-  description       = "LB outbound to internet for updates"
-  security_group_id = aws_security_group.lb.id
-  ip_protocol       = "-1"
-  cidr_ipv4         = "0.0.0.0/0"
-}
-
-resource "aws_vpc_security_group_egress_rule" "jenkins_all_out" {
-  description       = "Jenkins outbound to internet for updates and plugins"
-  security_group_id = aws_security_group.jenkins.id
-  ip_protocol       = "-1"
-  cidr_ipv4         = "0.0.0.0/0"
 }

@@ -51,5 +51,7 @@ module "compute" {
   sg_consul_id  = module.security.sg_consul_id
   sg_jenkins_id = module.security.sg_jenkins_id
 
+  sg_internal_id = module.security.sg_internal_id
+
   s3_bucket_name = var.bucket_name
 }
