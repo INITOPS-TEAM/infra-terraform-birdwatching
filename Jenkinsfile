@@ -14,9 +14,16 @@ pipeline {
                 withCredentials([
                     aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'aws-access-key-veronika', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]){
-                    sh '''
-                        terraform -var-file ${params.env} ${params.tf_options} apply
-                    '''
+                    script{
+                        def terraformApply = ''
+                        if (params.terraform_apply == true) {
+                            terraformApply = '-auto-approve'    
+                        } 
+                        sh "echo terraformApply: ${terraformApply}"
+                        sh '''
+                            terraform -var-file ${params.env} ${terraformApply} apply
+                        '''
+                    }
                 }
             }
         }
