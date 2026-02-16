@@ -113,3 +113,8 @@ variable "env" {
   description = "Deployment environment"
   type        = string
 }
+
+variable "domain_name" {
+  description = "Public Route 53 hosted zone name"
+  type        = string
+}

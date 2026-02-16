@@ -19,6 +19,12 @@ variable "associate_public_ip" {
   default     = true
 }
 
+variable "associate_public_ip_lb" {
+  description = "Associate a public IP with the LB instance"
+  type        = bool
+  default     = false
+}
+
 variable "instance_type_lb" {
   description = "EC2 instance type for the load balancer VM"
   type        = string

@@ -1,146 +1,119 @@
 # infra-terraform-birdwatching
 
-Terraform codebase for AWS lab infrastructure. Infrastructure is deployed in **eu-north-1** and follows a multi-environment structure using environment-specific tfvars files.
+Terraform codebase for AWS lab infrastructure.
 
-The project provisions:
-- VPC with public subnets (no NAT)
+Provisions and manages:
+- S3 remote backend for Terraform state (native S3 locking)
+- VPC, subnets, routing
 - Security groups
 - EC2 instances (LB, app-1, app-2, DB, Consul, Jenkins)
+- Elastic IP for the Load Balancer
+- Route 53 DNS apex A record
 - IAM role and instance profile for AWS SSM
-- Application S3 bucket (via `/modules/s3`)
-
-Terraform state is stored remotely in S3 (separate backend bucket).
 
 ---
 ## Requirements
 
-- Terraform ~> 1.6
+- Terraform v1.14.4
 - AWS CLI v2
 - AWS account with EC2, VPC, IAM, S3 permissions
 
----
-## Bootstrap (Terraform Backend initialization)
-
-Terraform state is stored in S3 with native locking (no DynamoDB) in **eu-north-1**.
-
-Because Terraform cannot use an S3 backend before the bucket exists, a separate `bootstrap/` configuration is provided.
-
-Bootstrap backend (run once per region):
-
-``` bash
-cd bootstrap
-
-export AWS_PROFILE=iac
-export AWS_REGION=eu-north-1
-
-terraform init
-terraform apply
-```
-
-This creates S3 bucket for Terraform state. After successful execution, return to the root directory.
-
-Initialize main infrastructure:
-
-``` bash
-cd ..
-
-terraform init
-```
-
-If backend configuration was changed (during region migration):
-
-``` bash
-terraform init -reconfigure
-terraform init -migrate-state
-```
-
-Always verify state after migration:
-
-``` bash
-terraform state list
-```
 ---
 ## Repository structure
 
 ```
 ├── bootstrap/
-│   ├── main.tf
-│   ├── variables.tf
 ├── envs/
 │   ├── dev.tfvars
-│   ├── stage.tfvars.example
-│   ├── prod.tfvars.example
+│   ├── stage.tfvars
+│   ├── prod.tfvars
 ├── modules/        
 │   ├── compute/    
 │   ├── network/        
-│   ├── s3/ 
-│   └── security/   
-├── .gitignore          
-├── .terraform.lock.hcl 
-├── README.md           
+│   ├── s3/
+│   ├── dns/
+│   └── security/        
 ├── backend.tf          
 ├── provider.tf         
 ├── main.tf             
-├── variables.tf    
-└── outputs.tf      
+├── variables.tf
+├── outputs.tf  
+└── .terraform.lock.hcl
 ```
 ## Root files overview
 
-- **bootstrap/**
-  Separate Terraform configuration used only for creating the backend S3 bucket. Must be executed before initializing the main infrastructure.
 - **`backend.tf`**  
-  Defines Terraform backend (where state is stored).
+  Declares Terraform remote state.
 - **`provider.tf`**  
-  Defines the AWS provider and global settings (region, profile).
+  AWS provider configuration (for region and profile use variables).
 - **`main.tf`**  
-  Root module entry point. Instantiates child modules from `modules/` and connects them together.
+  Root module entry point. Instantiates child modules from `modules/` and connects them.
 - **`variables.tf`**
   Input variables for the root module (environment-wide configuration).
 - **`outputs.tf`**
-  Values exported from the infrastructure (instance IPs, IDs, etc).
+  Values exported from the infrastructure.
 - **`.terraform.lock.hcl`**
   Locks provider versions to ensure reproducible builds.
 
 ---
 
-## Modules
+## Environments
 
-Each directory under `modules/` is a self-contained Terraform module with its own:
+Environment-specific values are defined in:
 
-- `main.tf`
-- `variables.tf`
-- `outputs.tf`
-- `README.md`
+- `envs/dev.tfvars`
+- `envs/stage.tfvars`
+- `envs/prod.tfvars`
 
-Modules are not applied directly - they are consumed from `main.tf` in the root module.
+Environment-specific values are passed via `-var-file`.
 
 ---
-## Multi-environment configuration
+## Usage
 
-Environment-specific values are passed via 
+### 1. Backend
 
-    `-var-file=envs/<environment>.tfvars`
+Terraform state is stored in S3 with native locking (no DynamoDB). Each environment has a dedicated backend configuration file.
 
-Example (dev):
-```hcl
-aws_profile = "iac"
-aws_region  = "eu-north-1"
-name        = "pictapp-dev"
-key_name    = "<existing_ec2_keypair_name>"
+Backend configs:
+
+- `backend-eun-1-dev.hcl`
+- `backend-eun-1-stage.hcl`
+- `backend-eun-1-prod.hcl`
+
+Initialize Terraform for a specific environment (run once per environment or whenever backend configuration changes):
+
+```
+export AWS_PROFILE=iac
+export AWS_REGION=eu-north-1
+
+terraform init -reconfigure -backend-config=backend-eun1-dev.hcl
+```
+Always ensure backend config matches the environment you are targeting.
+
+After backend is initialized, regular runs only require:
+
+```
+terraform init
 ```
 
----
-## Usage (dev)
+### 2. Plan
 
-```bash
+```
 terraform plan -var-file=envs/dev.tfvars
+```
+### 3. Apply
+
+```
 terraform apply -var-file=envs/dev.tfvars
 ```
+`-var-file` must always correspond to the same environment.
 
 ---
 ## Notes
 - Ubuntu 24.04 LTS is used for all EC2 instances
 - All instances have an SSM role attached
-- Instances currently run in public subnets.
-- Security groups allow internal SG-to-SG SSH communication.
+- Instances currently run in public subnets (lab setup, no NAT)
+- Load Balancer uses a managed Elastic IP.
+- DNS apex record is managed via the `dns` module and points to the LB Elastic IP.
+
 
