@@ -17,7 +17,7 @@ resource "aws_vpc_security_group_ingress_rule" "consul_8300_from_internal" {
   security_group_id            = aws_security_group.internal.id
   ip_protocol                  = "tcp"
   from_port                    = 8300
-  to_port                      = 8300
+  to_port                      = 8301
   referenced_security_group_id = aws_security_group.internal.id
 }
 
