@@ -55,3 +55,9 @@ module "compute" {
 
   s3_bucket_name = var.bucket_name
 }
+
+module "dns" {
+  source       = "./modules/dns"
+  domain_name  = var.domain_name
+  ipv4_address = module.compute.lb_public_ip
+}

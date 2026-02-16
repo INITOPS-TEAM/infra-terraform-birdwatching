@@ -1,9 +1,0 @@
-# Example stage environment configuration
-
-aws_profile = "iac"
-aws_region  = "eu-north-1"
-env         = "stage"
-name        = "pictapp-stage"
-
-# key_name = "<existing-keypair>"
-# bucket_name = "<unique-bucket-name>"
