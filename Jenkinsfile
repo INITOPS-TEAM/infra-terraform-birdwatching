@@ -32,7 +32,7 @@ pipeline {
                             terraformApply = '-auto-approve'    
                         } 
                         sh "echo terraformApply: ${terraformApply}"
-                        sh "terraform init"
+                        sh "terraform init -backend-config=backend-eun1-${params.env}.hcl"
                         sh "terraform apply -var-file envs/${params.env}.tfvars ${terraformApply}"
                     }
                 }
