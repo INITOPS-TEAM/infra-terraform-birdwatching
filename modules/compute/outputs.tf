@@ -7,3 +7,8 @@ output "jenkins_public_ip" {
   description = "Public IP of the Jenkins instance"
   value       = aws_instance.jenkins.public_ip
 }
+
+output "lb_public_ip" {
+  description = "Elastic IP of the load balancer"
+  value       = aws_eip.lb.public_ip
+}

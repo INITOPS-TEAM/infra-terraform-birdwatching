@@ -116,6 +116,22 @@ resource "aws_instance" "lb" {
   }
 }
 
+### Elastic IP for Load Balancer
+
+resource "aws_eip" "lb" {
+  domain = "vpc"
+
+  instance = aws_instance.lb.id
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  tags = {
+    Name = "${var.name}-lb-eip"
+  }
+}
+
 ### Application instances
 
 resource "aws_instance" "app_1" {

@@ -37,3 +37,5 @@ instance_type_lb      = "t3.micro"
 instance_type_app     = "t3.micro"
 instance_type_db      = "t3.micro"
 instance_type_consul  = "t3.micro"
+
+domain_name = "junglemassive.xyz"
